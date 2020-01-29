@@ -5,17 +5,15 @@ from mlbox.prediction import *
 from settings import Data_Val
 
 
-def go():
-    paths, target_name, submit_csv, result_csv = ([Data_Val.feature_matrix, ], Data_Val.tg, Data_Val.sc, Data_Val.rc)
-
+def go(paths=[Data_Val.feature_matrix], target_name=Data_Val.tg, submit_csv=Data_Val.sc, result_csv=Data_Val.rc):
+    
     rd = Reader(sep=',')
     df = rd.train_test_split(paths, target_name)
 
     dft = Drift_thresholder()
     df = dft.fit_transform(df)
 
-    # opt = Optimiser(scoring=Data_Val.scoring, n_folds=Data_Val.n_folds)
-    opt = Optimiser(scoring=Data_Val.scoring)
+    opt = Optimiser(scoring=Data_Val.scoring, n_folds=Data_Val.n_folds)
 
     space = Data_Val.space
     params = opt.optimise(space, df, 15)
@@ -31,4 +29,12 @@ def go():
 
 
 if __name__ == '__main__':
+    # csv_list = [
+    #     'D:\\99_Data\\02_home-credit-default-risk\\application_train.csv',
+    #     'D:\\99_Data\\02_home-credit-default-risk\\application_test.csv'
+    # ]
+    # target = 'TARGET'
+    # sub = 'D:\\99_Data\\02_home-credit-default-risk\\sample_submission.csv'
+    # result = 'D:\\99_Data\\02_home-credit-default-risk\\result_just_app.csv'
+    # go(csv_list, target, sub, result)
     pass
