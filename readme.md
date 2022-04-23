@@ -42,7 +42,7 @@ vi ./settings/Data_Val.py
 - 根据需要编辑```2. 调教配置```
 ### 4. 运行主程序
 ```shell script
-python ./Main.py
+python ./main.py
 ```
 程序将全自动完成数据读取、特征工程、训练、预测，运行完成后，你可以根据配置参数中设置的预测结果路径来获得预测结果。
     
