@@ -1,4 +1,4 @@
-# tabular_forecast
+# big_forecast
 表格类数据预测的机器学习自动化框架，只需几行代码解决预测问题。
 ## 框架说明
 ### 1. 适用场景
@@ -11,11 +11,11 @@
 ## 安装说明
 ### 1. 克隆项目
 ```shell script
-git clone https://gitee.com/zhongshijie/tabular_forecast
+git clone https://gitee.com/zhongshijie/big_forecast
 ```
 ### 2. 安装必要依赖
 ```shell script
-cd tabular_forecast
+cd big_forecast
 pip install -r requirements.txt
 ```
 - 感谢依赖打包项目：[pipreqs](https://github.com/bndr/pipreqs)
