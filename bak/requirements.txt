@@ -1,4 +1,4 @@
-dask==2.9.2
+dask==2021.10.0
 mlbox==0.8.2
 psutil==5.6.7
 numpy==1.17.0
