@@ -1,8 +1,9 @@
 import os
 import pandas as pd
 from typing import Any
-from utils import Log
-from prepares import DealDataFile, DealDataFrame
+from bak.utils import Log
+from bak.prepares import DealDataFile
+from bak.prepares import DealDataFrame
 
 
 def read_data_and_make_partitions(dp: str, sp: str, rs: dict, ds: set, dd: Any, ic: str, mt: str, op: str, oi: list) -> int:

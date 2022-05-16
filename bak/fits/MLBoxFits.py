@@ -2,7 +2,7 @@ from mlbox.preprocessing import *
 from mlbox.optimisation import *
 from mlbox.prediction import *
 
-from settings import Data_Val
+from bak.settings import Data_Val
 
 
 def go(paths=[Data_Val.feature_matrix], target_name=Data_Val.tg, submit_csv=Data_Val.sc, result_csv=Data_Val.rc):

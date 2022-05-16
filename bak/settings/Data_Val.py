@@ -1,6 +1,6 @@
 import numpy as np
 
-from settings import Data_Fun
+from bak.settings import Data_Fun
 
 # --------------------1. 参数配置 ---------------------
 """

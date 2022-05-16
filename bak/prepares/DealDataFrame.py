@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-from settings import Run_Val
-from utils import Log
+from bak.settings import Run_Val
+from bak.utils import Log
 
 
 def replace_val_from_df_dict(data: dict, replace_dict: dict) -> dict:

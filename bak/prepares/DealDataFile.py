@@ -2,8 +2,8 @@ import os
 import collections
 import pandas as pd
 
-from utils import Log
-from settings import Run_Val
+from bak.utils import Log
+from bak.settings import Run_Val
 
 
 def get_data_dict_by_path(base_path: str, skips=None) -> dict:
