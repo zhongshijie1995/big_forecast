@@ -1,0 +1,20 @@
+# IDEA通用
+.idea
+.DS_Store
+
+# Python通用
+__pycache__
+.ipynb_checkpoints
+
+# big_forecast
+# big_forecast文件夹
+contest
+eda
+whl
+history
+ft
+# big_forecast文件
+*.pickle
+*.csv
+*.ipynb
+
