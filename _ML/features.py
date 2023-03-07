@@ -257,6 +257,7 @@ class TabFeatures:
             _select_params_metric: List[float],
             _interesting_values: Dict[str, Dict[str, List[str]]] = None,
             _interesting_values_agg_list: List[str] = None,
+            _reappear_col_list: List[str] = None,
     ) -> pd.DataFrame:
         # 生成一个实体集
         _es = TabFeatures.Define.gen_entity_set(_name)
@@ -284,99 +285,41 @@ class TabFeatures:
             _max_depth=_max_depth,
             _primitive_options=_primitive_options,
         )
-        # 保存特征定义
-        os.makedirs('ft', exist_ok=True)
-        _fdp = 'ft/feature_dict-%s.pickle' % _name
-        TabFeatures.Gen.create_features_dict(_fdp, feature_list)
-        # 进行特征选择
-        TabFeatures.select_features(
-            _es=_es,
-            _fdp=_fdp,
-            _feature_list=feature_list,
-            _target_tab=_target_tab,
-            _target_id=_target_id,
-            _target=_target_col,
-            _try_step=_try_step,
-            _select_params=_select_params,
-            _select_params_metric=_select_params_metric,
-            _n_jobs=_n_jobs,
-        )
-        # 提取选择后的特征
-        picked_features = TabFeatures.Gen.pick_features_dict(_fdp, _max_col_nums)
         result_feature_list = []
-        for i in feature_list:
-            if i.get_name() in [x[0] for x in picked_features]:
-                result_feature_list.append(i)
+        if _reappear_col_list is not None or _max_col_nums > len(feature_list):
+            logger.info('直接提取指定特征{}个', len(result_feature_list))
+            for i in feature_list:
+                if i.get_name() in [x for x in _reappear_col_list]:
+                    result_feature_list.append(i)
+        else:
+            logger.info('进行特征探索')
+            # 保存特征定义
+            os.makedirs('ft', exist_ok=True)
+            _fdp = 'ft/feature_dict-%s.pickle' % _name
+            TabFeatures.Gen.create_features_dict(_fdp, feature_list)
+            # 进行特征选择
+            TabFeatures.select_features(
+                _es=_es,
+                _fdp=_fdp,
+                _feature_list=feature_list,
+                _target_tab=_target_tab,
+                _target_id=_target_id,
+                _target=_target_col,
+                _try_step=_try_step,
+                _select_params=_select_params,
+                _select_params_metric=_select_params_metric,
+                _n_jobs=_n_jobs,
+            )
+            # 提取选择后的特征
+            picked_features = TabFeatures.Gen.pick_features_dict(_fdp, _max_col_nums)
+            for i in feature_list:
+                if i.get_name() in [x[0] for x in picked_features]:
+                    result_feature_list.append(i)
         # 计算特征矩阵
         main = TabFeatures.Gen.gen_feature_matrix(result_feature_list, _es, _n_jobs)
         # 为特征矩阵拼接目标列
         main = pd.merge(
             left=_es[_target_tab][[_target_id, _target_col]],
-            right=main,
-            left_on=_target_id,
-            right_on=_target_id,
-            how='left'
-        )
-        return main
-
-    @staticmethod
-    def reappear(
-            _name: str,
-            _data: Dict[str, pd.DataFrame],
-            _target_tab: str,
-            _target_id: str,
-            _target: str,
-            _entities: List[Dict[str, str]],
-            _relationships: List[List[str]],
-            _trans_list: List[str],
-            _agg_list: List[str],
-            _groupby_trans_primitives: List[str],
-            _max_depth: int,
-            _max_col_nums: int,
-            _primitive_options: Dict[str, Any],
-            _n_jobs: int,
-            _reappear_col_list: List[str] = None,
-            # _try_step: int,
-            # _select_params: Dict[str, Any],
-            # _select_params_metric: List[float],
-            _interesting_values: Dict[str, Dict[str, List[str]]] = None,
-            _interesting_values_agg_list: List[str] = None,
-    ) -> pd.DataFrame:
-        # 生成一个实体集
-        _es = TabFeatures.Define.gen_entity_set(_name)
-        # 添加实体
-        for entity in _entities:
-            _es = TabFeatures.Define.add_entity(_es, _data, **entity)
-        # 添加关系
-        for a, a_idx, b, b_idx in _relationships:
-            _es = TabFeatures.Define.add_relationship(_es, a, a_idx, b, b_idx)
-        # 添加关注变量值
-        if _interesting_values is not None:
-            for k, v in _interesting_values.items():
-                _es.add_interesting_values(dataframe_name=k, values=v)
-        # 预览实体集
-        logger.info('实体集如下\n{}', _es)
-        # 生成特征定义
-        feature_list = TabFeatures.Gen.gen_feature_defs(
-            _es=_es,
-            _target_entity=_target_tab,
-            _trans_primitives=_trans_list,
-            _agg_primitives=_agg_list,
-            _groupby_trans_primitives=_groupby_trans_primitives,
-            _ignore_variables={_target_tab: [_target]},
-            _interesting_values_agg_list=_interesting_values_agg_list,
-            _max_depth=_max_depth,
-            _primitive_options=_primitive_options,
-        )
-        result_feature_list = []
-        for i in feature_list:
-            if i.get_name() in [x for x in _reappear_col_list]:
-                result_feature_list.append(i)
-        # 计算特征矩阵
-        main = TabFeatures.Gen.gen_feature_matrix(result_feature_list, _es, _n_jobs)
-        # 为特征矩阵拼接目标列
-        main = pd.merge(
-            left=_es[_target_tab][[_target_id, _target]],
             right=main,
             left_on=_target_id,
             right_on=_target_id,
