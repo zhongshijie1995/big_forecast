@@ -102,6 +102,17 @@ class TabBinary:
 
         :return:
         """
+        def log_scores(log_score_tag: str, log_score_body: Dict[str, float]):
+            logger.info('{}: {}', log_score_tag, log_score_body)
+
+        def log_all_scores(all_scores: Dict[str, List[Dict[str, float]]]):
+            for log_score_tag, log_score_body_list in all_scores.items():
+                show_tag = []
+                score_df = pd.DataFrame(log_score_body_list)
+                for score_typ in score_df:
+                    show_tag.append('{}: {}'.format(score_typ, pd.DataFrame(log_score_body_list)[score_typ].mean()))
+                logger.info('{}: [{}]', log_score_tag, ', '.join(show_tag))
+
         # 定义随机种子
         seed = 2023
         # 指定HYPEROPT的随机种子
@@ -144,7 +155,7 @@ class TabBinary:
                 _params['seed'] = fold_num
             # 日志打印频次
             log_period = _params.get('early_stopping_round')
-            log_period = log_period if log_period is not None else 100
+            # log_period = log_period if log_period is not None else 100
             # 开始训练
             clf = lgb.train(
                 params=_params,
@@ -155,8 +166,9 @@ class TabBinary:
                 # callbacks=[lgb.log_evaluation(period=log_period), ],
             )
             scores['train'].append(dict(clf.best_score['training']))
+            log_scores('train', dict(clf.best_score['training']))
             scores['val'].append(dict(clf.best_score['valid_1']))
-            logger.info('{}, {}', dict(clf.best_score['training']), dict(clf.best_score['valid_1']))
+            log_scores('val', dict(clf.best_score['valid_1']))
             # 获得特征重要性
             importance_df[fold_num] = clf.feature_importance()
             # 验证集-进行预测
