@@ -286,13 +286,18 @@ class TabFeatures:
             _primitive_options=_primitive_options,
         )
         result_feature_list = []
-        if _reappear_col_list is not None or _max_col_nums > len(feature_list):
-            logger.info('直接提取指定特征{}个', len(result_feature_list))
+        if _reappear_col_list is not None:
+            logger.info('重现特征工程，直接提取指定特征{}个', len(feature_list))
+            for i in feature_list:
+                if i.get_name() in [x for x in _reappear_col_list]:
+                    result_feature_list.append(i)
+        elif _max_col_nums > len(feature_list):
+            logger.info('自动特征工程，直接提取指定特征{}个', len(feature_list))
             for i in feature_list:
                 if i.get_name() in [x for x in _reappear_col_list]:
                     result_feature_list.append(i)
         else:
-            logger.info('进行特征探索')
+            logger.info('自动特征工程，进行特征探索')
             # 保存特征定义
             os.makedirs('ft', exist_ok=True)
             _fdp = 'ft/feature_dict-%s.pickle' % _name
