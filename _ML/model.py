@@ -155,6 +155,7 @@ class TabBinary:
             )
             scores['train'].append(dict(clf.best_score['training']))
             scores['val'].append(dict(clf.best_score['valid_1']))
+            logger.info('{}, {}', dict(clf.best_score['training']), dict(clf.best_score['valid_1']))
             # 获得特征重要性
             importance_df[fold_num] = clf.feature_importance()
             # 验证集-进行预测
@@ -192,7 +193,10 @@ class TabBinary:
         if _n_fold_list is None:
             _n_fold_list = [10, ]
         for train_time in range(len(_n_top_importance_list)):
-            logger.info('********************** 第{}次训练 **********************', train_time + 1)
+            logger.info(
+                '********************** 第{}次训练 [{}, {}] **********************',
+                train_time + 1, _n_fold_list[train_time], _n_top_importance_list[train_time],
+            )
             # 如果不是全部，则需要截取数据
             if _n_top_importance_list[train_time] != -1:
                 select_feature_after_train = TabBinary.view_importance(
