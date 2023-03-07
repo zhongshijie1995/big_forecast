@@ -1,6 +1,6 @@
 """
 -*- coding: utf-8 -*-
-@File  : feature_engineer.py
+@File  : features.py
 @Author: 钟世杰
 @Date  : 2023/1/31
 @Desc  : 
@@ -17,7 +17,10 @@ from _ML.model import TabBinary
 from _Tool.io import FileIO
 
 
-class TabsEngineer:
+class TabFeatures:
+    """
+    表格类特征工程
+    """
     class Define:
         @staticmethod
         def gen_entity_set(_name: str) -> ft.EntitySet:
@@ -99,8 +102,10 @@ class TabsEngineer:
             :param _target_entity: 目标实体名
             :param _agg_primitives: 聚合基元
             :param _trans_primitives: 转换基元
+            :param _groupby_trans_primitives: 分组的转换基元
             :param _ignore_variables: 无视的列
             :param _primitive_options: 基元选项
+            :param _interesting_values_agg_list: 关注的值
             :param _max_depth: 最大深度
 
             :return:
@@ -125,12 +130,6 @@ class TabsEngineer:
                     continue
                 else:
                     result.append(i)
-                # if '.idx' not in i.get_name():
-                #     result.append(i)
-                # elif '.time_idx' not in i.get_name():
-                #     result.append(i)
-                # else:
-                #     continue
             logger.info('实体集[{}]可衍生特征排除{}类型的特征后共[{}]', _es.id, exs, len(result))
             return result
 
@@ -219,7 +218,7 @@ class TabsEngineer:
                 if i.get_name() in try_feature_names:
                     try_features.append(i)
             logger.info('开始探索特征共[{}]个', len(try_feature_names))
-            tmp_feature_matrix = TabsEngineer.Gen.gen_feature_matrix(try_features, _es, _n_jobs)
+            tmp_feature_matrix = TabFeatures.Gen.gen_feature_matrix(try_features, _es, _n_jobs)
             tmp_feature_matrix = pd.merge(tmp_feature_matrix, _es[_target_tab][[_target_id, _target]], on=_target_id)
             feature_df = TabBinary.get_importance(
                 tmp_feature_matrix,
@@ -260,13 +259,13 @@ class TabsEngineer:
             _interesting_values_agg_list: List[str] = None,
     ) -> pd.DataFrame:
         # 生成一个实体集
-        _es = TabsEngineer.Define.gen_entity_set(_name)
+        _es = TabFeatures.Define.gen_entity_set(_name)
         # 添加实体
         for entity in _entities:
-            _es = TabsEngineer.Define.add_entity(_es, _data, **entity)
+            _es = TabFeatures.Define.add_entity(_es, _data, **entity)
         # 添加关系
         for a, a_idx, b, b_idx in _relationships:
-            _es = TabsEngineer.Define.add_relationship(_es, a, a_idx, b, b_idx)
+            _es = TabFeatures.Define.add_relationship(_es, a, a_idx, b, b_idx)
         # 添加关注变量值
         if _interesting_values is not None:
             for k, v in _interesting_values.items():
@@ -274,7 +273,7 @@ class TabsEngineer:
         # 预览实体集
         logger.info('实体集如下\n{}', _es)
         # 生成特征定义
-        feature_list = TabsEngineer.Gen.gen_feature_defs(
+        feature_list = TabFeatures.Gen.gen_feature_defs(
             _es=_es,
             _target_entity=_target_tab,
             _trans_primitives=_trans_list,
@@ -288,9 +287,9 @@ class TabsEngineer:
         # 保存特征定义
         os.makedirs('ft', exist_ok=True)
         _fdp = 'ft/feature_dict-%s.pickle' % _name
-        TabsEngineer.Gen.create_features_dict(_fdp, feature_list)
+        TabFeatures.Gen.create_features_dict(_fdp, feature_list)
         # 进行特征选择
-        TabsEngineer.select_features(
+        TabFeatures.select_features(
             _es=_es,
             _fdp=_fdp,
             _feature_list=feature_list,
@@ -303,13 +302,13 @@ class TabsEngineer:
             _n_jobs=_n_jobs,
         )
         # 提取选择后的特征
-        picked_features = TabsEngineer.Gen.pick_features_dict(_fdp, _max_col_nums)
+        picked_features = TabFeatures.Gen.pick_features_dict(_fdp, _max_col_nums)
         result_feature_list = []
         for i in feature_list:
             if i.get_name() in [x[0] for x in picked_features]:
                 result_feature_list.append(i)
         # 计算特征矩阵
-        main = TabsEngineer.Gen.gen_feature_matrix(result_feature_list, _es, _n_jobs)
+        main = TabFeatures.Gen.gen_feature_matrix(result_feature_list, _es, _n_jobs)
         # 为特征矩阵拼接目标列
         main = pd.merge(
             left=_es[_target_tab][[_target_id, _target_col]],
@@ -344,13 +343,13 @@ class TabsEngineer:
             _interesting_values_agg_list: List[str] = None,
     ) -> pd.DataFrame:
         # 生成一个实体集
-        _es = TabsEngineer.Define.gen_entity_set(_name)
+        _es = TabFeatures.Define.gen_entity_set(_name)
         # 添加实体
         for entity in _entities:
-            _es = TabsEngineer.Define.add_entity(_es, _data, **entity)
+            _es = TabFeatures.Define.add_entity(_es, _data, **entity)
         # 添加关系
         for a, a_idx, b, b_idx in _relationships:
-            _es = TabsEngineer.Define.add_relationship(_es, a, a_idx, b, b_idx)
+            _es = TabFeatures.Define.add_relationship(_es, a, a_idx, b, b_idx)
         # 添加关注变量值
         if _interesting_values is not None:
             for k, v in _interesting_values.items():
@@ -358,7 +357,7 @@ class TabsEngineer:
         # 预览实体集
         logger.info('实体集如下\n{}', _es)
         # 生成特征定义
-        feature_list = TabsEngineer.Gen.gen_feature_defs(
+        feature_list = TabFeatures.Gen.gen_feature_defs(
             _es=_es,
             _target_entity=_target_tab,
             _trans_primitives=_trans_list,
@@ -374,7 +373,7 @@ class TabsEngineer:
             if i.get_name() in [x for x in _reappear_col_list]:
                 result_feature_list.append(i)
         # 计算特征矩阵
-        main = TabsEngineer.Gen.gen_feature_matrix(result_feature_list, _es, _n_jobs)
+        main = TabFeatures.Gen.gen_feature_matrix(result_feature_list, _es, _n_jobs)
         # 为特征矩阵拼接目标列
         main = pd.merge(
             left=_es[_target_tab][[_target_id, _target]],
