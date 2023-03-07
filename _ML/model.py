@@ -151,7 +151,7 @@ class TabBinary:
                 train_set=trn_data,
                 categorical_feature=cat_list,
                 valid_sets=[trn_data, val_data],
-                callbacks=[lgb.log_evaluation(period=log_period), ],
+                # callbacks=[lgb.log_evaluation(period=log_period), ],
             )
             scores['train'].append(dict(clf.best_score['training']))
             scores['val'].append(dict(clf.best_score['valid_1']))
@@ -178,99 +178,41 @@ class TabBinary:
         return clf_list, importance_df, predicts
 
     @staticmethod
-    def train_cat(
+    def train_step_by_about_importance(
             _data: pd.DataFrame,
             _target: str,
             _target_id: str,
             _params: dict,
             _check_score_func: Callable,
-            _n_fold: int = 5,
-    ) -> (List[lgb.Booster], pd.DataFrame, Dict[str, pd.DataFrame]):
-        """
-        模型训练cat
-
-        :param _data:
-        :param _target:
-        :param _target_id:
-        :param _params:
-        :param _check_score_func:
-        :param _n_fold:
-
-        :return:
-        """
-        # 定义随机种子
-        seed = 2023
-        # 指定HYPEROPT的随机种子
-        os.environ['HYPEROPT_FMIN_SEED'] = str(seed)
-        # 将不利于模型训练的数据类型进行转换
-        _data = DfProcessing.change_int64_to_float64(_data)
-        _data, cat_list = DfProcessing.change_object_to_int(_data, skips=[_target_id])
-        # 切分数据集-训练数据
-        train = _data[_data[_target].notnull()]
-        train_x = train.loc[:, ~train.columns.isin([_target, _target_id])]
-        train_y = train.loc[:, train.columns.isin([_target])]
-        # 切分数据集-测试集
-        test = _data[_data[_target].isnull()]
-        test_x = test.loc[:, ~test.columns.isin([_target, _target_id])]
-        # 评价分数
-        scores = {'train': [], 'val': []}
-        # 预测集
-        predicts = {'train': pd.DataFrame(), 'val': pd.DataFrame(), 'test': pd.DataFrame()}
-        predicts['train'][_target_id] = train[_target_id]
-        predicts['val'][_target_id] = train[_target_id]
-        predicts['val'][_target] = train[_target]
-        predicts['test'][_target_id] = test[_target_id]
-        # 预定义模型列表
-        clf_list = []
-        # 开始训练
-        importance_df = pd.DataFrame()
-        importance_df['Feature'] = train_x.columns
-        # 进行K折划分
-        stratified_k_fold = StratifiedKFold(_n_fold, shuffle=True, random_state=seed)
-        for k, (trn_idx, val_idx) in enumerate(stratified_k_fold.split(train, train_y)):
-            # 获得K折轮次
-            fold_num = k + 1
-            # 划分本K折的训练集和验证集
-            trn_data = lgb.Dataset(train_x.iloc[trn_idx], label=train_y.iloc[trn_idx])
-            val_data = lgb.Dataset(train_x.iloc[val_idx], label=train_y.iloc[val_idx])
-            # 打印当前拆分结构
-            logger.info('------ 第{}次K折拆分，训练形状{} ------', fold_num, train_x.iloc[trn_idx].shape)
-            # 将训练的seed指定为折数，保证10折内各模型的初始参数是不同的，但是重复运行则10折是相同的
-            if 'seed' not in _params:
-                _params['seed'] = fold_num
-            # 日志打印频次
-            log_period = _params.get('early_stopping_round')
-            log_period = log_period if log_period is not None else 100
+            _n_fold_list=None,
+            _n_top_importance_list=None,
+    ):
+        if _n_top_importance_list is None:
+            _n_top_importance_list = [-1, ]
+        if _n_fold_list is None:
+            _n_fold_list = [10, ]
+        for train_time in range(len(_n_top_importance_list)):
+            logger.info('第{}次训练', train_time + 1)
+            # 如果不是全部，则需要截取数据
+            if _n_fold_list[train_time] != -1:
+                select_feature_after_train = TabBinary.view_importance(
+                    importance_df,
+                    _k=_n_fold_list[train_time],
+                    _top=_n_fold_list[train_time],
+                    _without_zero=True
+                )['Feature'].to_list()
+                select_feature_after_train.append(_target_id)
+                select_feature_after_train.append(_target)
+                _data = _data[select_feature_after_train]
             # 开始训练
-            clf = lgb.train(
-                params=_params,
-                train_set=trn_data,
-                categorical_feature=cat_list,
-                valid_sets=[trn_data, val_data],
-                callbacks=[lgb.log_evaluation(period=log_period), ],
+            clf_list, importance_df, predicts = TabBinary.train_lgb(
+                _data=_data,
+                _target=_target,
+                _target_id=_target_id,
+                _params=_params,
+                _check_score_func=_check_score_func,
+                _n_fold=_n_fold_list[train_time],
             )
-            scores['train'].append(dict(clf.best_score['training']))
-            scores['val'].append(dict(clf.best_score['valid_1']))
-            # 获得特征重要性
-            importance_df[fold_num] = clf.feature_importance()
-            # 验证集-进行预测
-            val_pred = pd.DataFrame()
-            val_pred[_target_id] = train.iloc[val_idx][_target_id]
-            val_pred[fold_num] = clf.predict(data=train_x.iloc[val_idx])
-            predicts['val'] = pd.merge(predicts['val'], val_pred, on=_target_id, how='left')
-            # 训练集-进行预测
-            train_pred = clf.predict(data=train_x[train_x.columns])
-            predicts['train'][fold_num] = train_pred
-            # 测试集-进行预测
-            test_pred = clf.predict(data=test_x[train_x.columns])
-            predicts['test'][fold_num] = test_pred
-            clf_list.append(clf)
-        # 总览
-        logger.info('---------------------------总览------------------------------------')
-        for k, v in scores.items():
-            for vv in v:
-                logger.info('{}:{}', k, vv)
-        # 返回
         return clf_list, importance_df, predicts
 
     @staticmethod
