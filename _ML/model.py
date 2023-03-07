@@ -170,7 +170,7 @@ class TabBinary:
             predicts['test'][fold_num] = test_pred
             clf_list.append(clf)
         # 总览
-        logger.info('---------------------------总览------------------------------------')
+        logger.info('---------------- 总览 ----------------')
         for k, v in scores.items():
             for vv in v:
                 logger.info('{}:{}', k, vv)
@@ -192,9 +192,9 @@ class TabBinary:
         if _n_fold_list is None:
             _n_fold_list = [10, ]
         for train_time in range(len(_n_top_importance_list)):
-            logger.info('第{}次训练', train_time + 1)
+            logger.info('********************** 第{}次训练 **********************', train_time + 1)
             # 如果不是全部，则需要截取数据
-            if _n_fold_list[train_time] != -1:
+            if _n_top_importance_list[train_time] != -1:
                 select_feature_after_train = TabBinary.view_importance(
                     importance_df,
                     _k=_n_fold_list[train_time],
