@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from hyperopt import hp, fmin, tpe
 from loguru import logger
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, f1_score
 
 
 class Metrics:
@@ -55,8 +55,8 @@ class Metrics:
         if type(_y_true) == lgb.Dataset:
             _y_true = _y_true.get_label()
         _y_pred_prob = Metrics.trans_pred(_y_pred_prob, threshold=threshold)
-        # return 'F1', f1_score(_y_true, _y_pred_prob), True
-        return 'F1', Metrics.f1_score_self(_y_true, _y_pred_prob), True
+        return 'F1', f1_score(_y_true, _y_pred_prob), True
+        # return 'F1', Metrics.f1_score_self(_y_true, _y_pred_prob), True
 
     @staticmethod
     def search_f1_best_threshold(_y_pred_prob, _y_true) -> float:
