@@ -87,7 +87,7 @@ class Metrics:
             ]
         )
         best = fmin(convert_f1_metrics, space, algo=tpe.suggest, verbose=False, show_progressbar=False, max_evals=100)
-        logger.info('最佳验证集为{}，最佳阈值为{}', best['min(1-f1)'], best['threshold'])
+        logger.info('最佳验证集为{}，最佳阈值为{}', best['min(-f1)'], best['threshold'])
         return best['threshold']
 
     @staticmethod
