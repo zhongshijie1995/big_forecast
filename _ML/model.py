@@ -164,7 +164,7 @@ class TabBinary:
                 valid_sets=[trn_data, val_data],
                 verbose_eval=False,
                 feval=_check_score_func,
-                # callbacks=[lgb.log_evaluation(period=log_period), ],
+                callbacks=[lgb.log_evaluation(period=100), ],
             )
             scores['train'].append(dict(clf.best_score['training']))
             log_scores('train', dict(clf.best_score['training']))
