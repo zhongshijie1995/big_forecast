@@ -163,7 +163,7 @@ class TabBinary:
                 categorical_feature=cat_list,
                 valid_sets=[trn_data, val_data],
                 verbose_eval=False,
-                feval=Metrics.f1_metrics,
+                feval=_check_score_func,
                 # callbacks=[lgb.log_evaluation(period=log_period), ],
             )
             scores['train'].append(dict(clf.best_score['training']))
