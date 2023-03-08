@@ -70,7 +70,7 @@ class TabBinary:
         main.columns = main.columns.str.replace(' ', '!@!')
         trn_data = lgb.Dataset(main.loc[:, ~main.columns.isin([_target, _id])], label=main[_target])
         # 进行训练
-        bst = lgb.train(_params, trn_data, valid_sets=[trn_data], callbacks=[lgb.log_evaluation(period=50)])
+        bst = lgb.train(_params, trn_data, valid_sets=[trn_data], verbose_eval=False)
         # 统计特征重要性
         feature_df = pd.DataFrame()
         feature_df['feature_name'] = bst.feature_name()
