@@ -213,7 +213,7 @@ class TabBinary:
                 select_feature_after_train = TabBinary.view_importance(
                     importance_df,
                     _k=_n_fold_list[train_time],
-                    _top=_n_fold_list[train_time],
+                    _top=_n_top_importance_list[train_time],
                     _without_zero=True
                 )['Feature'].to_list()
                 select_feature_after_train.append(_target_id)
