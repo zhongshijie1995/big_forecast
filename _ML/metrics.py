@@ -71,7 +71,7 @@ class Metrics:
         best_f1 = -1
         best_threshold = -1
         for threshold in tqdm(np.arange(0, 1, 0.01)):
-            tmp_f1 = Metrics.f1_metrics(_y_pred_prob, _y_true, threshold)
+            tmp_f1 = Metrics.f1_metrics(_y_pred_prob, _y_true, threshold)[1]
             if tmp_f1 > best_f1:
                 best_f1 = tmp_f1
                 best_threshold = threshold
