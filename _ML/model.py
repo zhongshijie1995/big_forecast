@@ -154,7 +154,7 @@ class TabBinary:
             if 'seed' not in _params:
                 _params['seed'] = fold_num
             # 日志打印频次
-            log_period = _params.get('early_stopping_round')
+            # log_period = _params.get('early_stopping_round')
             # log_period = log_period if log_period is not None else 100
             # 开始训练
             clf = lgb.train(
@@ -185,9 +185,7 @@ class TabBinary:
             clf_list.append(clf)
         # 总览
         logger.info('---------------- 总览 ----------------')
-        for k, v in scores.items():
-            for vv in v:
-                logger.info('{}:{}', k, vv)
+        log_all_scores(scores)
         # 返回
         return clf_list, importance_df, predicts
 
@@ -207,7 +205,7 @@ class TabBinary:
             _n_fold_list = [10, ]
         for train_time in range(len(_n_top_importance_list)):
             logger.info(
-                '********************** 第{}次训练 [{}, {}] **********************',
+                '********************** 第{}次训练, {}, {}] **********************',
                 train_time + 1, _n_fold_list[train_time], _n_top_importance_list[train_time],
             )
             # 如果不是全部，则需要截取数据
