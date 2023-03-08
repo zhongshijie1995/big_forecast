@@ -11,9 +11,9 @@ from typing import Any, Dict
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
-from hyperopt import hp, fmin, tpe
 from loguru import logger
 from sklearn.metrics import confusion_matrix, f1_score
+from tqdm import tqdm
 
 
 class Metrics:
@@ -68,27 +68,15 @@ class Metrics:
 
         :return: 最佳阈值
         """
-
-        def convert_f1_metrics(args):
-            """
-            转化F1分数为最优化
-
-            :param args: 预测概率，真实结果， 阈值
-
-            :return: F1最大化的值
-            """
-            pred_prob, act_true, threshold = args
-            return - Metrics.f1_metrics(pred_prob, act_true, threshold)[1]
-
-        space = hp.choice(
-            'min(-f1)',
-            [
-                (_y_pred_prob, _y_true, hp.uniform('threshold', 0, 1)),
-            ]
-        )
-        best = fmin(convert_f1_metrics, space, algo=tpe.suggest, verbose=False, show_progressbar=False, max_evals=100)
-        logger.info('最佳验证集为{}，最佳阈值为{}', best['min(-f1)'], best['threshold'])
-        return best['threshold']
+        best_f1 = -1
+        best_threshold = -1
+        for threshold in tqdm(np.arange(0, 1, 0.01)):
+            tmp_f1 = Metrics.f1_metrics(_y_pred_prob, _y_true, threshold)
+            if tmp_f1 > best_f1:
+                best_f1 = tmp_f1
+                best_threshold = threshold
+        logger.info('最佳验证集为{}，最佳阈值为{}', best_f1, best_threshold)
+        return best_threshold
 
     @staticmethod
     def guess_attr(attr: Dict[str, Any]) -> Dict:
