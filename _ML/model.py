@@ -153,9 +153,6 @@ class TabBinary:
             # 将训练的seed指定为折数，保证10折内各模型的初始参数是不同的，但是重复运行则10折是相同的
             if 'seed' not in _params:
                 _params['seed'] = fold_num
-            # 日志打印频次
-            # log_period = _params.get('early_stopping_round')
-            # log_period = log_period if log_period is not None else 100
             # 开始训练
             clf = lgb.train(
                 params=_params,
@@ -164,7 +161,6 @@ class TabBinary:
                 valid_sets=[trn_data, val_data],
                 verbose_eval=False,
                 feval=_check_score_func,
-                callbacks=[lgb.log_evaluation(period=100), ],
             )
             scores['train'].append(dict(clf.best_score['training']))
             log_scores('train', dict(clf.best_score['training']))
