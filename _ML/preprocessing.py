@@ -4,6 +4,7 @@ from typing import List, Dict
 
 import numpy as np
 import pandas as pd
+import featuretools as ft
 from dataprep.eda import plot, plot_correlation, create_report
 from dataprep.eda.container import Container
 from dataprep.eda.create_report.report import Report
@@ -214,6 +215,25 @@ class DfProcessing:
             if is_low_info:
                 low_info_cols.append(col)
         result = _df.drop(low_info_cols, axis=1, inplace=False)
+        logger.info('处置后形状[{}]', result.shape)
+        return result
+
+    @staticmethod
+    def drop_high_corr_cols(_df: pd.DataFrame, high_rate: float = 0.95, _target: str = None) -> pd.DataFrame:
+        """
+        删除高相关性的列
+
+        :param _df: 给定的Pandas
+        :param high_rate: 高相关性判定的阈值
+        :param _target: [可选]标签列，若存在则按照此列划分训练集和测试集，且仅删除训练集和测试集同时Nan过高
+
+        :return: 处理后的pandas
+        """
+        logger.info('处置前形状[{}]', _df.shape)
+        features_to_keep = [_target, ] if _target is not None else None
+        result = ft.selection.remove_highly_correlated_features(
+            _df, pct_corr_threshold=high_rate, features_to_keep=features_to_keep
+        )
         logger.info('处置后形状[{}]', result.shape)
         return result
 
