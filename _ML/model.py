@@ -236,14 +236,14 @@ class TabBinary:
             r: int,
     ) -> Dict[str, pd.DataFrame]:
         result = {}
-        # 对整个训练集搜索阈值并作用在测试集
-        pred_tag = '全折阈值-截取'
+        # 概率均值以0.5划分
+        pred_tag = '概率均值-裸分'
         result[pred_tag] = pd.DataFrame()
         result[pred_tag][_target_id] = _predicts['test'][_target_id]
-        _predicts['val']['all'] = _predicts['val'].loc[:, [i for i in range(1, _k + 1)]].sum(axis=1)
-        all_threshold = Metrics.search_f1_best_threshold(_predicts['val']['all'], _predicts['val'][_target])
-        tmp = _predicts['test'][[i for i in range(1, _k + 1)]].mean(axis=1)
-        result[pred_tag][_target] = Metrics.trans_pred(tmp, all_threshold)
+        result[pred_tag][_target] = 0
+        for k_fold in range(1, _k + 1):
+            result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
+        result[pred_tag][_target] = result[pred_tag][_target].round().astype(int)
         # 取测试集均值前r名
         pred_tag = '概率均值-排名'
         result[pred_tag] = pd.DataFrame()
