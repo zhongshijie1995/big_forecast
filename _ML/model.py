@@ -17,7 +17,6 @@ from loguru import logger
 from matplotlib import pyplot as plt
 from sklearn.model_selection import StratifiedKFold
 
-from _ML.metrics import Metrics
 from _ML.preprocessing import DfProcessing
 
 warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
@@ -236,26 +235,22 @@ class TabBinary:
             r: int,
     ) -> Dict[str, pd.DataFrame]:
         result = {}
-        # 概率均值以0.5划分
-        pred_tag = '概率均值-裸分'
-        result[pred_tag] = pd.DataFrame()
-        result[pred_tag][_target_id] = _predicts['test'][_target_id]
-        result[pred_tag][_target] = 0
-        for k_fold in range(1, _k + 1):
-            result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
-        result[pred_tag][_target] = result[pred_tag][_target].round().astype(int)
-        # 取测试集均值前r名
-        pred_tag = '概率均值-排名'
-        result[pred_tag] = pd.DataFrame()
-        result[pred_tag][_target_id] = _predicts['test'][_target_id]
-        result[pred_tag][_target] = 0
-        for k_fold in range(1, _k + 1):
-            result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
-        tmp = np.zeros(len(result[pred_tag]))
-        for i in np.argsort(-np.array(result[pred_tag][_target]))[: r]:
-            tmp[i] = 1
-        result[pred_tag][_target] = tmp
-
+        pred_tag_list = ['概率均值_裸分', '概率均值_排名']
+        for pred_tag in pred_tag_list:
+            result[pred_tag] = pd.DataFrame()
+            result[pred_tag][_target_id] = _predicts['test'][_target_id]
+            result[pred_tag][_target] = 0
+            if pred_tag == '概率均值_裸分':
+                for k_fold in range(1, _k + 1):
+                    result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
+                result[pred_tag][_target] = result[pred_tag][_target].round().astype(int)
+            if pred_tag == '概率均值_排名':
+                for k_fold in range(1, _k + 1):
+                    result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
+                tmp = np.zeros(len(result[pred_tag]))
+                for i in np.argsort(-np.array(result[pred_tag][_target]))[: r]:
+                    tmp[i] = 1
+                result[pred_tag][_target] = tmp
         return result
 
     @staticmethod
