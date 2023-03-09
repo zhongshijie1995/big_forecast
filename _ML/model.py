@@ -256,7 +256,7 @@ class TabBinary:
                     tmp_val = _predicts['val'].loc[:, [_target_id, k_fold, _target]]
                     tmp_val = tmp_val[tmp_val[k_fold].notnull()]
                     m_threshold += Metrics.search_f1_best_threshold(tmp_val[k_fold], tmp_val[_target])[0] / _k
-                result[pred_tag][_target] = Metrics.trans_pred(_predicts['test'][_target], m_threshold)
+                result[pred_tag][_target] = Metrics.trans_pred(result[pred_tag][_target], m_threshold)
             if pred_tag == '概率均值_排名':
                 logger.info('{}', pred_tag)
                 for k_fold in range(1, _k + 1):
