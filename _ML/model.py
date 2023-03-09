@@ -17,6 +17,7 @@ from loguru import logger
 from matplotlib import pyplot as plt
 from sklearn.model_selection import StratifiedKFold
 
+from _ML.metrics import Metrics
 from _ML.preprocessing import DfProcessing
 
 warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
@@ -241,10 +242,21 @@ class TabBinary:
             result[pred_tag][_target_id] = _predicts['test'][_target_id]
             result[pred_tag][_target] = 0
             if pred_tag == '概率均值_裸分':
+                logger.info('{}', pred_tag)
                 for k_fold in range(1, _k + 1):
                     result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
                 result[pred_tag][_target] = result[pred_tag][_target].round().astype(int)
+            if pred_tag == '各折搜阈_统划':
+                logger.info('{}', pred_tag)
+                m_threshold = 0
+                for k_fold in range(1, _k + 1):
+                    tmp_val = _predicts['val'].loc[:, [_target_id, k_fold, _target]]
+                    tmp_val = tmp_val[tmp_val[k_fold].notnull()]
+                    m_threshold += Metrics.search_f1_best_threshold(tmp_val[k_fold], tmp_val[_target]) / _k
+                logger.info('取阈值: {}', m_threshold)
+                result[pred_tag][_target] = Metrics.trans_pred(result[pred_tag][_target], m_threshold)
             if pred_tag == '概率均值_排名':
+                logger.info('{}', pred_tag)
                 for k_fold in range(1, _k + 1):
                     result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
                 tmp = np.zeros(len(result[pred_tag]))

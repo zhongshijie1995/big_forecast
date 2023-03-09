@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 from sklearn.metrics import confusion_matrix, f1_score
-from tqdm import tqdm
 
 
 class Metrics:
@@ -70,7 +69,7 @@ class Metrics:
         """
         best_f1 = -1
         best_threshold = -1
-        for threshold in tqdm(np.arange(0, 1, 0.01)):
+        for threshold in np.arange(0, 1, 0.01):
             tmp_f1 = Metrics.f1_metrics(_y_pred_prob, _y_true, threshold)[1]
             if tmp_f1 > best_f1:
                 best_f1 = tmp_f1
