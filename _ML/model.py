@@ -234,9 +234,9 @@ class TabBinary:
             _target: str,
             _k: int,
             r: int,
+            pred_tag_list: List[str] = ['概率均值_裸分,']
     ) -> Dict[str, pd.DataFrame]:
         result = {}
-        pred_tag_list = ['概率均值_裸分', '概率均值_排名']
         for pred_tag in pred_tag_list:
             result[pred_tag] = pd.DataFrame()
             result[pred_tag][_target_id] = _predicts['test'][_target_id]
