@@ -233,31 +233,39 @@ class TabBinary:
             _target_id: str,
             _target: str,
             _k: int,
-            r: int,
             pred_tag_list: List[str] = ['概率均值_裸分,']
     ) -> Dict[str, pd.DataFrame]:
         result = {}
         for pred_tag in pred_tag_list:
+            logger.info('{}', pred_tag)
             result[pred_tag] = pd.DataFrame()
             result[pred_tag][_target_id] = _predicts['test'][_target_id]
             result[pred_tag][_target] = 0
             if pred_tag == '概率均值_裸分':
-                logger.info('{}', pred_tag)
                 for k_fold in range(1, _k + 1):
                     result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
                 result[pred_tag][_target] = result[pred_tag][_target].round().astype(int)
             if pred_tag == '各折搜阈_统划':
-                logger.info('{}', pred_tag)
                 m_threshold = 0
                 for k_fold in range(1, _k + 1):
-                    # 为测试集计算均值
-                    result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
                     # 为验证集搜索阈值
                     tmp_val = _predicts['val'].loc[:, [_target_id, k_fold, _target]]
                     tmp_val = tmp_val[tmp_val[k_fold].notnull()]
                     m_threshold += Metrics.search_f1_best_threshold(tmp_val[k_fold], tmp_val[_target])[0] / _k
+                    # 为测试集计算均值
+                    result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
                 result[pred_tag][_target] = Metrics.trans_pred(result[pred_tag][_target], m_threshold)
-            if pred_tag == '概率均值_排名':
+            if pred_tag == '各折最优_投票':
+                for k_fold in range(1, _k + 1):
+                    # 为验证集搜索阈值
+                    tmp_val = _predicts['val'].loc[:, [_target_id, k_fold, _target]]
+                    tmp_val = tmp_val[tmp_val[k_fold].notnull()]
+                    m_threshold = Metrics.search_f1_best_threshold(tmp_val[k_fold], tmp_val[_target])[0]
+                    # 为测试集计算最优
+                    result[pred_tag][_target] += (Metrics.trans_pred(_predicts['test'][k_fold], m_threshold) / _k)
+                result[pred_tag][_target] = result[pred_tag][_target].round().astype(int)
+            if '概率均值_排名' in pred_tag:
+                r = int(pred_tag.split('-')[1])
                 logger.info('{}', pred_tag)
                 for k_fold in range(1, _k + 1):
                     result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
