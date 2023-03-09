@@ -6,6 +6,7 @@
 @Desc  : 
 @Contact : zhongshijie1995@outlook.com
 """
+import math
 import os
 import warnings
 from typing import List, Callable, Dict
@@ -89,6 +90,8 @@ class TabBinary:
             _params: dict,
             _check_score_func: Callable,
             _n_fold: int = 5,
+            _plot: bool = False,
+            _plot_metric: str = None,
     ) -> (List[lgb.Booster], pd.DataFrame, Dict[str, pd.DataFrame], List[Dict]):
         """
         模型训练
@@ -99,6 +102,8 @@ class TabBinary:
         :param _params:
         :param _check_score_func:
         :param _n_fold:
+        :param _plot:
+        :param _plot_metric:
 
         :return:
         """
@@ -188,6 +193,15 @@ class TabBinary:
         # 总览
         logger.info('---------------- 总览 ----------------')
         log_all_scores(scores)
+        if _plot:
+            for k in range(_n_fold):
+                lgb.plot_metric(
+                    eval_result_list[k],
+                    title=str(k),
+                    metric=_plot_metric,
+                    ax=plt.subplot(int(math.ceil(_n_fold/5)),5, 1)
+                )
+            plt.show()
         # 返回
         return clf_list, importance_df, predicts, eval_result_list
 
@@ -200,6 +214,8 @@ class TabBinary:
             _check_score_func: Callable,
             _n_fold_list=None,
             _n_top_importance_list=None,
+            _plot: bool = False,
+            _plot_metric: str = None,
     ):
         if _n_top_importance_list is None:
             _n_top_importance_list = [-1, ]
@@ -229,6 +245,8 @@ class TabBinary:
                 _params=_params,
                 _check_score_func=_check_score_func,
                 _n_fold=_n_fold_list[train_time],
+                _plot=_plot,
+                _plot_metric=_plot_metric,
             )
         return clf_list, importance_df, predicts, eval_result_list
 
@@ -238,8 +256,10 @@ class TabBinary:
             _target_id: str,
             _target: str,
             _k: int,
-            pred_tag_list: List[str] = ['概率均值_裸分,']
+            pred_tag_list=None
     ) -> Dict[str, pd.DataFrame]:
+        if pred_tag_list is None:
+            pred_tag_list = ['概率均值_裸分,']
         result = {}
         for pred_tag in pred_tag_list:
             logger.info('{}', pred_tag)
