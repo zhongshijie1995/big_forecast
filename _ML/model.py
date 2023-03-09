@@ -89,7 +89,7 @@ class TabBinary:
             _params: dict,
             _check_score_func: Callable,
             _n_fold: int = 5,
-    ) -> (List[lgb.Booster], pd.DataFrame, Dict[str, pd.DataFrame]):
+    ) -> (List[lgb.Booster], pd.DataFrame, Dict[str, pd.DataFrame], List[Dict]):
         """
         模型训练
 
@@ -137,6 +137,8 @@ class TabBinary:
         predicts['test'][_target_id] = test[_target_id]
         # 预定义模型列表
         clf_list = []
+        # 预定义训练结果列表
+        eval_result_list = []
         # 开始训练
         importance_df = pd.DataFrame()
         importance_df['Feature'] = train_x.columns
@@ -154,6 +156,7 @@ class TabBinary:
             if 'seed' not in _params:
                 _params['seed'] = fold_num
             # 开始训练
+            eval_result = {}
             clf = lgb.train(
                 params=_params,
                 train_set=trn_data,
@@ -161,7 +164,9 @@ class TabBinary:
                 valid_sets=[trn_data, val_data],
                 verbose_eval=False,
                 feval=_check_score_func,
+                evals_result=eval_result,
             )
+            eval_result_list.append(eval_result)
             scores['train'].append(dict(clf.best_score['training']))
             log_scores('train', dict(clf.best_score['training']))
             scores['val'].append(dict(clf.best_score['valid_1']))
@@ -184,7 +189,7 @@ class TabBinary:
         logger.info('---------------- 总览 ----------------')
         log_all_scores(scores)
         # 返回
-        return clf_list, importance_df, predicts
+        return clf_list, importance_df, predicts, eval_result_list
 
     @staticmethod
     def train_step_by_about_importance(
@@ -217,7 +222,7 @@ class TabBinary:
                 select_feature_after_train.append(_target)
                 _data = _data[select_feature_after_train]
             # 开始训练
-            clf_list, importance_df, predicts = TabBinary.train_lgb(
+            clf_list, importance_df, predicts, eval_result_list = TabBinary.train_lgb(
                 _data=_data,
                 _target=_target,
                 _target_id=_target_id,
@@ -225,7 +230,7 @@ class TabBinary:
                 _check_score_func=_check_score_func,
                 _n_fold=_n_fold_list[train_time],
             )
-        return clf_list, importance_df, predicts
+        return clf_list, importance_df, predicts, eval_result_list
 
     @staticmethod
     def pred(
