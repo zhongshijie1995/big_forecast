@@ -266,7 +266,6 @@ class TabBinary:
                 result[pred_tag][_target] = result[pred_tag][_target].round().astype(int)
             if '概率均值_排名' in pred_tag:
                 r = int(pred_tag.split('-')[1])
-                logger.info('{}', pred_tag)
                 for k_fold in range(1, _k + 1):
                     result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
                 tmp = np.zeros(len(result[pred_tag]))
