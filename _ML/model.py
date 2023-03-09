@@ -250,11 +250,13 @@ class TabBinary:
                 logger.info('{}', pred_tag)
                 m_threshold = 0
                 for k_fold in range(1, _k + 1):
+                    # 为测试集计算均值
+                    result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
+                    # 为验证集搜索阈值
                     tmp_val = _predicts['val'].loc[:, [_target_id, k_fold, _target]]
                     tmp_val = tmp_val[tmp_val[k_fold].notnull()]
-                    m_threshold += Metrics.search_f1_best_threshold(tmp_val[k_fold], tmp_val[_target]) / _k
-                logger.info('取阈值: {}', m_threshold)
-                result[pred_tag][_target] = Metrics.trans_pred(result[pred_tag][_target], m_threshold)
+                    m_threshold += Metrics.search_f1_best_threshold(tmp_val[k_fold], tmp_val[_target])[0] / _k
+                result[pred_tag][_target] = Metrics.trans_pred(_predicts['test'][_target], m_threshold)
             if pred_tag == '概率均值_排名':
                 logger.info('{}', pred_tag)
                 for k_fold in range(1, _k + 1):

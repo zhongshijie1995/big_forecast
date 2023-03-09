@@ -58,7 +58,7 @@ class Metrics:
         # return 'F1', Metrics.f1_score_self(_y_true, _y_pred_prob), True
 
     @staticmethod
-    def search_f1_best_threshold(_y_pred_prob, _y_true) -> float:
+    def search_f1_best_threshold(_y_pred_prob, _y_true) -> [float, float]:
         """
         [0-1分类]F1分数搜索阈值
 
@@ -74,8 +74,7 @@ class Metrics:
             if tmp_f1 > best_f1:
                 best_f1 = tmp_f1
                 best_threshold = threshold
-        logger.info('最佳验证集为{}，最佳阈值为{}', best_f1, best_threshold)
-        return best_threshold
+        return best_threshold, best_f1
 
     @staticmethod
     def guess_attr(attr: Dict[str, Any]) -> Dict:
