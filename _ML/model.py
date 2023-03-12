@@ -199,7 +199,7 @@ class TabBinary:
                     eval_result_list[k],
                     title=str(k),
                     metric=_plot_metric,
-                    ax=plt.subplot(int(math.ceil(_n_fold/5)),5, 1)
+                    ax=plt.subplot(int(math.ceil(_n_fold/5)), 5, k+1)
                 )
             plt.show()
         # 返回
