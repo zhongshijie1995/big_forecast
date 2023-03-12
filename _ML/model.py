@@ -194,10 +194,11 @@ class TabBinary:
         logger.info('---------------- 总览 ----------------')
         log_all_scores(scores)
         if _plot:
+            plt.figure(figsize=(20, 10))
             for k in range(_n_fold):
                 lgb.plot_metric(
                     eval_result_list[k],
-                    title=str(k),
+                    title=str(k+1),
                     metric=_plot_metric,
                     ax=plt.subplot(int(math.ceil(_n_fold/5)), 5, k+1)
                 )
