@@ -172,6 +172,7 @@ class TabBinary:
                 evals_result=eval_result,
             )
             eval_result_list.append(eval_result)
+            logger.info('最佳迭代次数为[{}]', clf.best_iteration)
             scores['train'].append(dict(clf.best_score['training']))
             log_scores('train', dict(clf.best_score['training']))
             scores['val'].append(dict(clf.best_score['valid_1']))
@@ -181,13 +182,13 @@ class TabBinary:
             # 验证集-进行预测
             val_pred = pd.DataFrame()
             val_pred[_target_id] = train.iloc[val_idx][_target_id]
-            val_pred[fold_num] = clf.predict(data=train_x.iloc[val_idx])
+            val_pred[fold_num] = clf.predict(data=train_x.iloc[val_idx], num_iteration=clf.best_iteration)
             predicts['val'] = pd.merge(predicts['val'], val_pred, on=_target_id, how='left')
             # 训练集-进行预测
-            train_pred = clf.predict(data=train_x[train_x.columns])
+            train_pred = clf.predict(data=train_x[train_x.columns], num_iteration=clf.best_iteration)
             predicts['train'][fold_num] = train_pred
             # 测试集-进行预测
-            test_pred = clf.predict(data=test_x[train_x.columns])
+            test_pred = clf.predict(data=test_x[train_x.columns], num_iteration=clf.best_iteration)
             predicts['test'][fold_num] = test_pred
             clf_list.append(clf)
         # 总览
