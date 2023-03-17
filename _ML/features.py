@@ -13,7 +13,7 @@ import featuretools as ft
 import pandas as pd
 from loguru import logger
 
-from _ML.model import TabBinary
+from _ML.models import TabBinary
 from _Tool.io import FileIO
 
 

@@ -1,6 +1,6 @@
 """
 -*- coding: utf-8 -*-
-@File  : model.py
+@File  : models.py
 @Author: 钟世杰
 @Date  : 2023/1/31
 @Desc  : 
@@ -272,7 +272,7 @@ class TabBinary:
             if pred_tag == '概率均值_裸分':
                 for k_fold in range(1, _k + 1):
                     result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
-                result[pred_tag][_target] = result[pred_tag][_target].round().astype(int)
+                result[pred_tag][_target] = result.get(pred_tag)[_target].round().astype(int)
             if pred_tag == '各折搜阈_统划':
                 m_threshold = 0
                 for k_fold in range(1, _k + 1):
