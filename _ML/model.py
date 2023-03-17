@@ -223,6 +223,7 @@ class TabBinary:
             _n_top_importance_list = [-1, ]
         if _n_fold_list is None:
             _n_fold_list = [10, ]
+        clf_list, importance_df, predicts, eval_result_list = [], [], [], []
         for train_time in range(len(_n_top_importance_list)):
             logger.info(
                 '********************** 第{}次训练, {}, {}] **********************',
