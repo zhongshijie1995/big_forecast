@@ -6,7 +6,7 @@ class DataframeSQL:
     @staticmethod
     def df_into_sqlite(db_path_name: str, table_name: str, df: pd.DataFrame) -> None:
         engine = sqlalchemy.create_engine('sqlite:///{}'.format(db_path_name))
-        df.to_sql(table_name, engine)
+        df.to_sql(table_name, engine, index=False)
 
     @staticmethod
     def sqlite_into_df(db_path_name: str, table_name: str) -> pd.DataFrame:
