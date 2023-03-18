@@ -3,5 +3,5 @@ featuretools
 loguru
 lightgbm
 hyperopt
-pandasql
 tqdm
+sqlalchemy
