@@ -13,7 +13,7 @@ class DataframeSQL:
     @staticmethod
     def df_into_sqlite(db_path_name: str, table_name: str, df: pd.DataFrame) -> None:
         engine = DataframeSQL.__get_sqlite_engine(db_path_name)
-        logger.info('数据库连接为[{}]，写入数据表[{}], 形状为[{}]', engine.url, table_name, df.shape)
+        logger.info('数据库连接为[{} ]，写入数据表[{}], 形状为[{}]', engine.url, table_name, df.shape)
         df.to_sql(table_name, engine, index=False)
         return None
 
@@ -28,5 +28,5 @@ class DataframeSQL:
     def sqlite_query_into_df(db_path_name: str, query: str) -> pd.DataFrame:
         engine = DataframeSQL.__get_sqlite_engine(db_path_name)
         with engine.connect() as conn:
-            logger.info('数据库连接为[{}]，查询语句[{}]', engine.url, query)
-            return pd.read_sql_query(query, conn)
+            logger.info('数据库连接为[{} ]，查询语句[{}]', engine.url, query)
+            return pd.read_sql_query(sql=query, con=conn)
