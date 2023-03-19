@@ -29,4 +29,4 @@ class DataframeSQL:
         engine = DataframeSQL.__get_sqlite_engine(db_path_name)
         with engine.connect() as conn:
             logger.info('数据库连接为[{} ]，查询语句[{}]', engine.url, query)
-            return pd.read_sql_query(sql=query, con=conn)
+            return pd.read_sql_query(sql=sqlalchemy.text(query), con=conn)
