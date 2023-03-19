@@ -93,7 +93,8 @@ class TabFeatures:
                 _ignore_variables: dict = None,
                 _primitive_options: dict = None,
                 _interesting_values_agg_list: list = None,
-                _max_depth: int = 2
+                _max_depth: int = 2,
+                _training_window: str = None,
         ) -> List[ft.FeatureBase]:
             """
             生成衍生特征定义
@@ -107,6 +108,7 @@ class TabFeatures:
             :param _primitive_options: 基元选项
             :param _interesting_values_agg_list: 关注的值
             :param _max_depth: 最大深度
+            :param _training_window: 训练窗口
 
             :return:
             """
@@ -120,7 +122,8 @@ class TabFeatures:
                 max_depth=_max_depth,
                 primitive_options=_primitive_options,
                 where_primitives=_interesting_values_agg_list,
-                features_only=True
+                features_only=True,
+                training_window=_training_window,
             )
             logger.info('实体集[{}]可衍生特征共[{}]', _es.id, len(feature_defs))
             result = []
@@ -255,6 +258,7 @@ class TabFeatures:
             _try_step: int,
             _select_params: Dict[str, Any],
             _select_params_metric: List[float],
+            _training_window: str = None,
             _interesting_values: Dict[str, Dict[str, List[str]]] = None,
             _interesting_values_agg_list: List[str] = None,
             _reappear_col_list: List[str] = None,
@@ -284,6 +288,7 @@ class TabFeatures:
             _interesting_values_agg_list=_interesting_values_agg_list,
             _max_depth=_max_depth,
             _primitive_options=_primitive_options,
+            _training_window=_training_window,
         )
         result_feature_list = []
         if _reappear_col_list is not None:
