@@ -83,6 +83,77 @@ class TabBinary:
         return feature_df
 
     @staticmethod
+    def train_lgb_k_check(
+            _data: pd.DataFrame,
+            _target: str,
+            _target_id: str,
+            _params: dict,
+            _check_score_func: Callable,
+            _n_fold: int = 5,
+            _plot: bool = False,
+            _plot_metric: str = None,
+    ):
+        """
+        模型训练
+
+        :param _data:
+        :param _target:
+        :param _target_id:
+        :param _params:
+        :param _check_score_func:
+        :param _n_fold:
+        :param _plot:
+        :param _plot_metric:
+
+        :return:
+        """
+
+        # 定义随机种子
+        seed = 2023
+        # 指定HYPEROPT的随机种子
+        os.environ['HYPEROPT_FMIN_SEED'] = str(seed)
+        # # 将不利于模型训练的数据类型进行转换
+        # _data = DfProcessing.change_int64_to_float64(_data)
+        # _data, cat_list = DfProcessing.change_object_to_int(_data, skips=[_target_id])
+        # 切分数据集-训练数据
+        train = _data[_data[_target].notnull()]
+        train_x = train.loc[:, ~train.columns.isin([_target, _target_id])]
+        train_y = train.loc[:, train.columns.isin([_target])]
+        # 切分数据集-测试集
+        test = _data[_data[_target].isnull()]
+        test_x = test.loc[:, ~test.columns.isin([_target, _target_id])]
+        # 评价分数
+        scores = {'train': [], 'val': []}
+        # 预测集
+        predicts = {'train': pd.DataFrame(), 'val': pd.DataFrame(), 'test': pd.DataFrame()}
+        predicts['train'][_target_id] = train[_target_id]
+        predicts['val'][_target_id] = train[_target_id]
+        predicts['val'][_target] = train[_target]
+        predicts['test'][_target_id] = test[_target_id]
+        # 预定义模型列表
+        clf_list = []
+        # 预定义训练结果列表
+        eval_result_list = []
+        # 开始训练
+        importance_df = pd.DataFrame()
+        importance_df['Feature'] = train_x.columns
+        # 进行K折划分
+        stratified_k_fold = StratifiedKFold(_n_fold, shuffle=True, random_state=seed)
+        for k, (trn_idx, val_idx) in enumerate(stratified_k_fold.split(train, train_y)):
+            # 获得K折轮次
+            fold_num = k + 1
+            # 划分本K折的训练集和验证集
+            trn_data = lgb.Dataset(train_x.iloc[trn_idx], label=train_y.iloc[trn_idx])
+            # val_data = lgb.Dataset(train_x.iloc[val_idx], label=train_y.iloc[val_idx])
+            # 打印当前拆分结构
+            logger.info('------ 第{}次K折拆分，训练形状{} ------', fold_num, train_x.iloc[trn_idx].shape)
+
+            logger.info('本次省市类别{}', list(train_x.iloc[trn_idx]['掌银客户基础信息表.掌银注册行所在省份'].unique()))
+
+        return None
+
+
+    @staticmethod
     def train_lgb(
             _data: pd.DataFrame,
             _target: str,
@@ -259,7 +330,7 @@ class TabBinary:
             _target_id: str,
             _target: str,
             _k: int,
-            pred_tag_list=None
+            pred_tag_list=None,
     ) -> Dict[str, pd.DataFrame]:
         if pred_tag_list is None:
             pred_tag_list = ['概率均值_裸分,']
@@ -269,10 +340,11 @@ class TabBinary:
             result[pred_tag] = pd.DataFrame()
             result[pred_tag][_target_id] = _predicts['test'][_target_id]
             result[pred_tag][_target] = 0
-            if pred_tag == '概率均值_裸分':
+            if '概率均值_裸分' in pred_tag:
+                m_threshold = float(pred_tag.split('-')[1])
                 for k_fold in range(1, _k + 1):
                     result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
-                result[pred_tag][_target] = result.get(pred_tag)[_target].round().astype(int)
+                result[pred_tag][_target] = (result.get(pred_tag)[_target] + m_threshold).round().astype(int)
             if pred_tag == '各折搜阈_统划':
                 m_threshold = 0
                 for k_fold in range(1, _k + 1):
@@ -283,15 +355,46 @@ class TabBinary:
                     # 为测试集计算均值
                     result[pred_tag][_target] += (_predicts['test'][k_fold] / _k)
                 result[pred_tag][_target] = Metrics.trans_pred(result[pred_tag][_target], m_threshold)
-            if pred_tag == '各折最优_投票':
+            if '各折最优_投票' in pred_tag:
+                ticket_threshold = float(pred_tag.split('-')[1])
+                m_threshold_list = []
                 for k_fold in range(1, _k + 1):
                     # 为验证集搜索阈值
                     tmp_val = _predicts['val'].loc[:, [_target_id, k_fold, _target]]
                     tmp_val = tmp_val[tmp_val[k_fold].notnull()]
                     m_threshold = Metrics.search_f1_best_threshold(tmp_val[k_fold], tmp_val[_target])[0]
+                    m_threshold_list.append(m_threshold)
                     # 为测试集计算最优
                     result[pred_tag][_target] += (Metrics.trans_pred(_predicts['test'][k_fold], m_threshold) / _k)
-                result[pred_tag][_target] = result[pred_tag][_target].round().astype(int)
+                logger.info('[{}]最优阈值{}', pred_tag, m_threshold_list)
+                logger.info('[{}]锁定票数{}', pred_tag, ticket_threshold)
+                result[pred_tag][_target] = Metrics.trans_pred(result[pred_tag][_target], ticket_threshold)
+            if '各折全局最优_投票' in pred_tag:
+                ticket_threshold = float(pred_tag.split('-')[1])
+                m_threshold_list = []
+                for k_fold in range(1, _k + 1):
+                    # 为验证集搜索阈值
+                    tmp_val = _predicts['train'].loc[:, [_target_id, k_fold, _target]]
+                    tmp_val = tmp_val[tmp_val[k_fold].notnull()]
+                    m_threshold = Metrics.search_f1_best_threshold(tmp_val[k_fold], tmp_val[_target])[0]
+                    m_threshold_list.append(m_threshold)
+                    # 为测试集计算最优
+                    result[pred_tag][_target] += (Metrics.trans_pred(_predicts['test'][k_fold], m_threshold) / _k)
+                logger.info('[{}]最优阈值{}', pred_tag, m_threshold_list)
+                logger.info('[{}]锁定票数{}', pred_tag, ticket_threshold)
+                result[pred_tag][_target] = Metrics.trans_pred(result[pred_tag][_target], ticket_threshold)
+            if '各折最优_并集' in pred_tag:
+                m_threshold_list = []
+                for k_fold in range(1, _k + 1):
+                    # 为验证集搜索阈值
+                    tmp_val = _predicts['val'].loc[:, [_target_id, k_fold, _target]]
+                    tmp_val = tmp_val[tmp_val[k_fold].notnull()]
+                    m_threshold = Metrics.search_f1_best_threshold(tmp_val[k_fold], tmp_val[_target])[0]
+                    m_threshold_list.append(m_threshold)
+                    # 为测试集计算最优
+                    result[pred_tag][_target] += (Metrics.trans_pred(_predicts['test'][k_fold], m_threshold) / _k)
+                logger.info('[{}]最优阈值{}', pred_tag, m_threshold_list)
+                result[pred_tag][_target] = Metrics.trans_pred(result[pred_tag][_target], 0.1)
             if '概率均值_排名' in pred_tag:
                 r = int(pred_tag.split('-')[1])
                 for k_fold in range(1, _k + 1):

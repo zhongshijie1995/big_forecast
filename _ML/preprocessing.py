@@ -2,9 +2,9 @@ import os
 import warnings
 from typing import List, Dict
 
+import featuretools as ft
 import numpy as np
 import pandas as pd
-import featuretools as ft
 from dataprep.eda import plot, plot_correlation, create_report
 from dataprep.eda.container import Container
 from dataprep.eda.create_report.report import Report
@@ -85,10 +85,10 @@ class CsvAnalysis:
     ) -> None:
         """
         为实体集生成数据报告
-        
+
         :param _data: 实体集
         :param _save_path: 保存报告路径
-        :return: 
+        :return:
         """
         for k, v in _data.items():
             CsvAnalysis.report(v, _save_path, k)
@@ -96,6 +96,16 @@ class CsvAnalysis:
 
 
 class DfProcessing:
+
+    @staticmethod
+    def category_replace_with_value_count(_df_all: pd.DataFrame, _col_name_all: pd.DataFrame, _df_target: pd.DataFrame,
+                                          _col_name_target: pd.DataFrame):
+        replace_dict = _df_all[_col_name_all].value_counts().to_dict()
+        replace_dict['nan'] = '0'
+        _df_target[_col_name_target] = _df_target[_col_name_target].astype('str')
+        _df_target[_col_name_target] = _df_target[_col_name_target].replace(replace_dict)
+        _df_target[_col_name_target] = _df_target[_col_name_target].astype('int64')
+        return _df_target
 
     @staticmethod
     def change_int64_to_float64(_df: pd.DataFrame) -> pd.DataFrame:
@@ -174,16 +184,17 @@ class DfProcessing:
         return _df
 
     @staticmethod
-    def bad_datetime_repair(_df: pd.DataFrame, _col: str) -> pd.DataFrame:
+    def bad_datetime_repair(_df: pd.DataFrame, _col: str, errors: str = 'ignore') -> pd.DataFrame:
         """
         对日期列中存在无法正常转换为日期的数据进行修复
 
         :param _df: 给定的Pandas
         :param _col: 待修复列
+        :param errors: 错误时处理 【ignore、coerce、raise】
 
         :return: 处理后的pandas
         """
-        _df[_col] = pd.to_datetime(_df[_col], errors='coerce')
+        _df[_col] = pd.to_datetime(_df[_col], errors=errors)
         return _df
 
     @staticmethod

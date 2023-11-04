@@ -14,6 +14,10 @@ import pandas as pd
 from loguru import logger
 from sklearn.metrics import confusion_matrix, f1_score
 
+global global_threshold
+
+global_threshold = 0.5
+
 
 class Metrics:
 
@@ -41,7 +45,7 @@ class Metrics:
         return f1
 
     @staticmethod
-    def f1_metrics(_y_pred_prob, _y_true, threshold: float = 0.5) -> (str, float, bool):
+    def f1_metrics(_y_pred_prob, _y_true, threshold: float = None) -> (str, float, bool):
         """
         [0-1分类]F1分数验证
 
@@ -53,6 +57,8 @@ class Metrics:
         """
         if type(_y_true) == lgb.Dataset:
             _y_true = _y_true.get_label()
+        if threshold is None:
+            threshold = global_threshold
         _y_pred_prob = Metrics.trans_pred(_y_pred_prob, threshold=threshold)
         return 'F1', f1_score(_y_true, _y_pred_prob), True
         # return 'F1', Metrics.f1_score_self(_y_true, _y_pred_prob), True
