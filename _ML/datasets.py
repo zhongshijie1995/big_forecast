@@ -12,8 +12,8 @@ from typing import Dict, List, Any
 import pandas as pd
 from loguru import logger
 
-from _Tool.io import FileIO
-from _Tool.str import StrList
+from .._Tool import FileIO
+from .._Tool.VarIO import StrList
 
 
 class CsvDataset:
@@ -134,16 +134,17 @@ class CsvDataset:
         result = {}
         # 开始读取数据集字典
         for dataset_nam, dataset_path in _paths.items():
+            logger.info('{}', dataset_nam)
             # 定义数据集
             result[dataset_nam] = {}
             # 获取数据集的路径
-            csv_paths = FileIO.get_file_list(_path=dataset_path)
+            csv_paths = FileIO.FileNameIO.get_file_list(_path=dataset_path)
             # 过滤跳过的路径
             csv_paths = StrList.filter_keys(_strs=csv_paths, _keys=_skips, _contain=False)
             # 遍历路径
             for csv_path in csv_paths:
                 # 提取实体名
-                csv_nam = FileIO.get_base_name(csv_path)
+                csv_nam = FileIO.FileNameIO.get_base_name(csv_path)
                 # 开始获取
                 logger.info('{}-{}', dataset_nam, csv_nam)
                 # 若要求更新文件列名为大写则更新文件

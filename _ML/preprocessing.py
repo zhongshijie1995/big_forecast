@@ -1,11 +1,11 @@
 import os
 import warnings
-from typing import List, Dict
+from typing import List, Dict, Any
 
 import featuretools as ft
 import numpy as np
 import pandas as pd
-from dataprep.eda import plot, plot_correlation, create_report
+from dataprep.eda import plot, plot_correlation, create_report, plot_missing, plot_diff
 from dataprep.eda.container import Container
 from dataprep.eda.create_report.report import Report
 from loguru import logger
@@ -22,7 +22,7 @@ class CsvAnalysis:
             _cols: List[str] = None,
     ) -> Container:
         """
-        绘制简单分析图
+        分析分布
 
         :param _df: 数据实体
         :param _cols: 指定需分析的列
@@ -39,7 +39,7 @@ class CsvAnalysis:
             _cols: List[str] = None,
     ) -> Container:
         """
-        绘制相关性分析图
+        分析相关性
 
         :param _df: 数据实体
         :param _cols: 指定需分析的列
@@ -49,6 +49,30 @@ class CsvAnalysis:
         if _cols is None:
             _cols = []
         return plot_correlation(_df, *_cols)
+
+    @staticmethod
+    def plot_missing(
+            _df: pd.DataFrame,
+            _cols: List[str] = None,
+    ) -> Container:
+        """
+        分析缺失值
+
+        :param _df: 数据实体
+        :param _cols: 指定需分析的列
+
+        :return: 绘制图
+        """
+        if _cols is None:
+            _cols = []
+        return plot_missing(_df, *_cols)
+
+    @staticmethod
+    def plot_diff(
+            _dfs: List[pd.DataFrame],
+            _config: Dict[str, Any] = None,
+    ):
+        return plot_diff(_dfs, config=_config)
 
     @staticmethod
     def report(
@@ -281,24 +305,3 @@ class DfProcessing:
         for i in range(len(id_vals)):
             _df.loc[_df[_id] == id_vals[i], target] = target_vals[i]
         return _df
-
-    @staticmethod
-    def alignment_data_dict():
-        # for k, v in dataset.mix_data.items():
-        #     num_features = v.select_dtypes(include=['float64']).columns.to_list()
-        #     print(k, num_features)
-        #     tmp = v
-        #     found_id = target_id
-        #     if k == 'DZ_TARGET':
-        #         continue
-        #     if k == 'DZ_TR_APS':
-        #         found_id = 'APSDCUSNO'
-        #     if k == 'DZ_MBNK_BEHAVIOR':
-        #         found_id = 'PID'
-        #     print('train', tmp.shape, 'test', tmp[tmp[found_id].str.endswith('.B')].shape)
-        #     for i in num_features:
-        #         ft_max = np.ceil(v[v[found_id].str.endswith('.B')][i].max())
-        #         ft_min = np.floor(v[v[found_id].str.endswith('.B')][i].min())
-        #         dataset.mix_data[k] = tmp[((tmp[i]>=ft_min)&(tmp[i]<=ft_max))|(tmp[i].isnull())]
-        #     print('train', dataset.mix_data[k].shape, 'test', dataset.mix_data[k][dataset.mix_data[k][found_id].str.endswith('.B')].shape)
-        pass

@@ -1,5 +1,9 @@
 import base64
 import os
+import pickle
+from typing import Any, Dict, List
+
+from loguru import logger
 
 
 class B64IO:
@@ -103,3 +107,93 @@ class TxtIO:
         with open(txt_path, 'w+') as f:
             f.write(result)
         return result
+
+    @staticmethod
+    def txt_replace_line(txt_path: str, line_idx: int, target_str: str):
+        """
+        txt文件替换指定行号的内容
+
+        :param txt_path: 文件路径
+        :param target_str: 替换后的字符
+        :param line_idx: 行号，从0开始
+        :return:
+        """
+        with open(txt_path, 'r') as f:
+            lines = f.readlines()
+        lines[line_idx] = target_str + os.linesep
+        logger.info('替换[{}]的第[{}]行内容为[{}]', txt_path, line_idx, target_str)
+        with open(txt_path, 'w') as f:
+            f.writelines(lines)
+
+
+class FileNameIO:
+    """
+    文件名输入输出
+    """
+
+    @staticmethod
+    def batch_rename(rename_dict: Dict[str, str], base_path: str = None) -> None:
+        """
+        批量重命名文件
+
+        :param rename_dict: 重命名字典[‘原文件路径’， ‘新文件路径’]
+        :param base_path: 统一的父目录，若没有，则不提供
+        :return:
+        """
+        for k, v in rename_dict.items():
+            f = os.path.join(base_path, k) if base_path is not None else k
+            t = os.path.join(base_path, v) if base_path is not None else v
+            if os.path.exists(f):
+                logger.info('重命名文件[{}]->[{}]', f, t)
+                os.rename(f, t)
+        return None
+
+    @staticmethod
+    def get_file_list(_path: str, _reverse: bool = False) -> List[str]:
+        """
+        获取文件列表
+        :param _path: 路径
+        :param _reverse: 逆序
+        :return: 文件列表
+        """
+        result = []
+        for dir_path, dir_names, file_names in os.walk(_path):
+            for file_name in file_names:
+                result.append(os.path.join(dir_path, file_name))
+        result.sort(reverse=_reverse)
+        return result
+
+    @staticmethod
+    def get_base_name(_path: str) -> str:
+        """
+        给定文件路径，获取文件基础名
+
+        :param _path: 目录
+
+        :return: 文件名列表
+        """
+        return os.path.basename(os.path.splitext(_path)[0])
+
+
+class PickleIO:
+    @staticmethod
+    def get_pickle(_file_name: str) -> Any:
+        """
+        读取文件到变量
+        :param _file_name: 读取的文件
+        :return: Python任意类型的变量
+        """
+        with open(_file_name, 'rb') as f:
+            return pickle.load(f)
+
+    @staticmethod
+    def save_pickle(_file_name: str, _bin: Any) -> None:
+        """
+        保存变量和文件
+        :param _file_name: 写入的文件
+        :param _bin: 变量
+        :return: 无
+        """
+        with open(_file_name, 'wb') as f:
+            pickle.dump(_bin, f)
+        return None
