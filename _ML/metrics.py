@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix, f1_score
 
 global global_threshold
 
-global_threshold = 0.5
+global_threshold = 0.18
 
 
 class Metrics:

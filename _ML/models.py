@@ -18,8 +18,8 @@ from loguru import logger
 from matplotlib import pyplot as plt
 from sklearn.model_selection import StratifiedKFold
 
-from _ML.metrics import Metrics
-from _ML.preprocessing import DfProcessing
+from .._ML.metrics import Metrics
+from .._ML.preprocessing import DfProcessing
 
 warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
 warnings.filterwarnings('ignore', category=RuntimeWarning)

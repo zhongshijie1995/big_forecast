@@ -7,14 +7,14 @@
 @Contact : zhongshijie1995@outlook.com
 """
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 import featuretools as ft
 import pandas as pd
 from loguru import logger
 
-from _ML.models import TabBinary
-from _Tool.io import FileIO
+from .._ML import models
+from .._Tool import FileIO
 
 
 class TabFeatures:
@@ -165,7 +165,7 @@ class TabFeatures:
                 feature_dict = {}
                 for i in _feature_list:
                     feature_dict[i.get_name()] = _unknown_flag
-                FileIO.save_pickle(_fdp, feature_dict)
+                FileIO.PickleIO.save_pickle(_fdp, feature_dict)
             return None
 
         @staticmethod
@@ -178,7 +178,7 @@ class TabFeatures:
 
             :return: 好特征名[列表]
             """
-            features_dict = FileIO.get_pickle(_fdp)
+            features_dict = FileIO.PickleIO.get_pickle(_fdp)
             order_features_dict = sorted(features_dict.items(), key=lambda x: x[1], reverse=True)
             result = [x for x in order_features_dict[: _max_col_nums]]
             logger.info('提取选择后特征[{}]个', len(result))
@@ -206,7 +206,7 @@ class TabFeatures:
             logger.info('第[{}]轮探索特征', try_time)
             # 读出待探索特征
             unknown_list = []
-            _feature_dict = FileIO.get_pickle(_fdp)
+            _feature_dict = FileIO.PickleIO.get_pickle(_fdp)
             for k, v in _feature_dict.items():
                 if v == _unknown_flag:
                     unknown_list.append(k)
@@ -223,7 +223,7 @@ class TabFeatures:
             logger.info('开始探索特征共[{}]个', len(try_feature_names))
             tmp_feature_matrix = TabFeatures.Gen.gen_feature_matrix(try_features, _es, _n_jobs)
             tmp_feature_matrix = pd.merge(tmp_feature_matrix, _es[_target_tab][[_target_id, _target]], on=_target_id)
-            feature_df = TabBinary.get_importance(
+            feature_df = models.TabBinary.get_importance(
                 tmp_feature_matrix,
                 _target,
                 _target_id,
@@ -237,7 +237,7 @@ class TabFeatures:
                 else:
                     _feature_dict[now_update_key] = row['importance']
             # 保存特征
-            FileIO.save_pickle(_fdp, _feature_dict)
+            FileIO.PickleIO.save_pickle(_fdp, _feature_dict)
 
     @staticmethod
     def auto(
@@ -375,3 +375,94 @@ class DatetimeEngineer:
                 if _round is not None:
                     result[tmp_col] = result[tmp_col].round(_round)
         return result
+
+
+class AutoFeatures:
+    @staticmethod
+    def is_main_tab(_df: pd.DataFrame, _id: str) -> bool:
+        """
+        根据ID列来判断是否主档表
+        :param _df:
+        :param _id:
+        :return:
+        """
+        row_num = _df.shape[0]
+        id_nunique = _df[_id].nunique()
+        if row_num == id_nunique:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def gen_features(
+            _id_name: str,
+            _data_dict: Dict[str, pd.DataFrame],
+            _dataframes: Dict[str, Tuple],
+            _relationships: List[Tuple],
+            _agg_primitives: List,
+            _trans_primitives: List,
+            _max_depth: int
+    ):
+        es = ft.EntitySet(id=_id_name, dataframes=_dataframes, relationships=_relationships)
+        logger.info(es)
+
+    @staticmethod
+    def auto(
+            _data_dict: Dict[str, pd.DataFrame],
+            _target_dataframe_name: str,
+            _target_id: str,
+            _force_continue: bool = False,
+    ):
+        main_tab_list = []
+        flow_tab_list = []
+        for tab_name, tab_df in _data_dict.items():
+            if AutoFeatures.is_main_tab(tab_df, _target_id):
+                main_tab_list.append(tab_name)
+            else:
+                flow_tab_list.append(tab_name)
+        logger.info('识别到主档表{}', main_tab_list)
+        logger.info('识别到流水表{}', flow_tab_list)
+
+        dataframes = {}
+        relationships = []
+
+        for main_tab in main_tab_list:
+            dataframes[main_tab] = (_data_dict[main_tab].copy(), _target_id, None, None, None, False)
+        for flow_tab in flow_tab_list:
+            dataframes[flow_tab] = (_data_dict[flow_tab].copy(), flow_tab + '.id', None, None, None, True)
+        logger.info('生成实体集完毕')
+
+        for main_tab in main_tab_list:
+            for flow_tab in flow_tab_list:
+                relationships.append((main_tab, _target_id, flow_tab, _target_id))
+        logger.info('生成关系集完毕')
+
+        es = ft.EntitySet(id='核心', dataframes=dataframes, relationships=relationships)
+        logger.info(es)
+
+        # if len(main_tab_list) > 1 and len(flow_tab_list) > 1:
+        #     logger.info('主档表和流水表皆大于1个')
+        #     # 主档单独关联流水
+        #     for main_tab in main_tab_list:
+        #         for flow_tab in flow_tab_list:
+        #             logger.info('------------------------')
+        #             task_desc = '将[{}](目标)与[{}]建立联系'.format(main_tab, flow_tab)
+        #             logger.info(task_desc)
+        #             if not _force_continue:
+        #                 go_on_flag = input('是否继续？（N-跳过当前主档+当前流水，Q-跳过当前主档，Y-确认）').upper()
+        #                 if go_on_flag == 'Q':
+        #                     logger.info('跳过当前主档')
+        #                     break
+        #                 if go_on_flag == 'N' or go_on_flag not in ['Y', 'N', 'Q']:
+        #                     logger.info('跳过当前主档+当前流水')
+        #                     continue
+        #             logger.info('开始特征衍生：{}', task_desc)
+        #             dataframes = {
+        #                 main_tab: (_data_dict[main_tab].copy(), _target_id, None, None, None, False),
+        #                 flow_tab: (_data_dict[flow_tab].copy(), '%s.id' % flow_tab, None, None, None, True),
+        #             }
+        #             relationships = [[main_tab, _target_id, flow_tab, _target_id]]
+        #             AutoFeatures.gen_features(
+        #                 _id_name=task_desc,
+        #                 _data_dict=_data_dict,
+        #             )
